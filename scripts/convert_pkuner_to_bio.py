@@ -1,24 +1,23 @@
-'''MSRANER 命名实体识别转换为bio标签的数据;
-数据来源：<https://github.com/chineseGLUE/chineseGLUE>
-源数据，分割符号为空格：
-中共中央/nt 致/o 中国致公党十一大/nt 的贺词/o 
+'''PKU 命名实体识别转换为bio标签的数据;
+源数据，分割符号为\t：
+台湾/ns#S-Ns	是/v#O	中国/ns#S-Ns	领土/n#O	不可分割/i#O	的/u#O	一/m#O	部分/n#O	。/wp#O 
 转换后数据，分割符号为\t：
-中	B-ORG
-共	I-ORG
-中	I-ORG
-央	I-ORG
-致	O
-中	B-ORG
-国	I-ORG
-致	I-ORG
-公	I-ORG
-党	I-ORG
-十	I-ORG
-一	I-ORG
-大	I-ORG
+台	B-LOC
+湾	I-LOC
+是	O
+中	B-LOC
+国	I-LOC
+领	O
+土	O
+不	O
+可	O
+分	O
+割	O
 的	O
-贺	O
-词	O
+一	O
+部	O
+分	O
+。	O
 '''
 import re
 import codecs
@@ -31,11 +30,20 @@ logging.basicConfig(
 logging.info('logging test')
 
 
-# tag转换配置,nr、ns、nt
+# tag转换配置,nr、ns、ni
 ner_tag_config = {
-    'nr': 'PER',
-    'ns': 'LOC',
-    'nt': 'ORG'
+    'S-Nh': 'PER',  # PER WHO
+    'B-Nh': 'PER',
+    'I-Nh': 'PER',
+    'E-Nh': 'PER',
+    'S-Ns': 'LOC',
+    'B-Ns': 'LOC',
+    'I-Ns': 'LOC',
+    'E-Ns': 'LOC',
+    'S-Ni': 'ORG',
+    'B-Ni': 'ORG',
+    'I-Ni': 'ORG',
+    'E-Ni': 'ORG'
 }
 
 
@@ -52,22 +60,23 @@ def data_parse_write_io(fi, fo):
             if len(line) == 0:
                 continue
             # 句子预处理与切分
-            tokens = line.split(' ')
+            tokens = line.split('\t')
             for token in tokens:
                 if len(token) == 0:
                     continue
-                split_index = token.rfind('/')
-                if split_index == -1:
+                ne_split_index = token.rfind('#')
+                pos_split_index = token.rfind('/')
+                if ne_split_index == -1 or pos_split_index == -1:
                     continue
-                word_text = token[:split_index]
-                word_tag = token[split_index+1:].lower()
+                word_text = token[:pos_split_index]
+                word_tag = token[ne_split_index+1:]
                 ner_tag = ner_tag_config.get(word_tag, 'o')
                 if ner_tag == 'o':
                     for char_index in range(len(word_text)):
                         ner_list.append('{}\t{}\n'.format(word_text[char_index], 'O'))
                 else:
                     for char_index in range(len(word_text)):
-                        if char_index == 0:
+                        if char_index == 0 and (word_tag.startswith('S-') or word_tag.startswith('B-')):
                             ner_list.append('{}\t{}{}\n'.format(word_text[char_index], 'B-', ner_tag))
                         else:
                             ner_list.append('{}\t{}{}\n'.format(word_text[char_index], 'I-', ner_tag))
@@ -81,10 +90,11 @@ def data_parse_write_io(fi, fo):
 
 if __name__ == "__main__":
     input_files = {
-        'test': 'data/testright1.txt',
-        'train': 'data/train1.txt'
+        'test': 'data/pku-test.ner',
+        'train': 'data/pku-train.ner',
+        'val': 'data/pku-holdout.ner',
     } 
-    output_file = 'data/msraner_{}_bio.txt'
+    output_file = 'data/pkuner_{}_bio.txt'
     # 提取数据集中的数据
     # title_list = ('news_id', 'category_code', 'category', 'title', 'keywords')
     for data_type, input_file_name in input_files.items():
