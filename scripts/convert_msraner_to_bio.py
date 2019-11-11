@@ -1,5 +1,25 @@
 '''MSRANER 命名实体识别转换为bio标签的数据;
-数据来源：<https://github.com/chineseGLUE/chineseGLUE>'''
+数据来源：<https://github.com/chineseGLUE/chineseGLUE>
+源数据：
+中共中央/nt 致/o 中国致公党十一大/nt 的贺词/o 
+转换后数据：
+中	B-ORG
+共	I-ORG
+中	I-ORG
+央	I-ORG
+致	O
+中	B-ORG
+国	I-ORG
+致	I-ORG
+公	I-ORG
+党	I-ORG
+十	I-ORG
+一	I-ORG
+大	I-ORG
+的	O
+贺	O
+词	O
+'''
 import re
 import codecs
 import traceback
@@ -44,13 +64,13 @@ def data_parse_write_io(fi, fo):
                 ner_tag = ner_tag_config.get(word_tag, 'o')
                 if ner_tag == 'o':
                     for char_index in range(len(word_text)):
-                        ner_list.append('{} {}\n'.format(word_text[char_index], 'O'))
+                        ner_list.append('{}\t{}\n'.format(word_text[char_index], 'O'))
                 else:
                     for char_index in range(len(word_text)):
                         if char_index == 0:
-                            ner_list.append('{} {}{}\n'.format(word_text[char_index], 'B-', ner_tag))
+                            ner_list.append('{}\t{}{}\n'.format(word_text[char_index], 'B-', ner_tag))
                         else:
-                            ner_list.append('{} {}{}\n'.format(word_text[char_index], 'I-', ner_tag))
+                            ner_list.append('{}\t{}{}\n'.format(word_text[char_index], 'I-', ner_tag))
             ner_list.append('\n')
             ner_text = ''.join(ner_list)
             fo.write(ner_text)
